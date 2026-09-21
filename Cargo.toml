@@ -1,0 +1,17 @@
+[package]
+name = "rupture-spectrum"
+version = "0.1.0"
+edition = "2021"
+description = "持时破裂谱 — 蠕变持久断裂寿命主曲线工作台"
+
+[dependencies]
+axum = "0.7.9"
+tokio = { version = "1.40", features = ["full"] }
+tower-http = { version = "0.5.2", features = ["fs", "trace"] }
+rusqlite = { version = "0.31.0", features = ["bundled"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+rand = "0.8.5"
+
+[dev-dependencies]
+reqwest = { version = "0.12", features = ["json", "blocking"] }

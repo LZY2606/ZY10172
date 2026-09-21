@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>持时破裂谱</title>
+<style>
+:root{--bg:#0f1420;--panel:#171e2e;--line:#28324a;--fg:#e8edf7;--mut:#93a0bb;--acc:#5aa2ff;--warn:#f5b452;--bad:#f06a6a;--ok:#57c98c;}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.55 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--fg)}
+header{padding:18px 24px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:14px}
+header h1{margin:0;font-size:22px;letter-spacing:2px}
+header .sub{color:var(--mut);font-size:12px}
+nav{display:flex;gap:4px;padding:10px 24px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+nav button{background:none;border:0;border-bottom:2px solid transparent;color:var(--mut);padding:8px 14px;cursor:pointer;font-size:14px}
+nav button.active{color:var(--acc);border-bottom-color:var(--acc)}
+main{padding:20px 24px;max-width:1240px}
+.tab{display:none}.tab.active{display:block}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+.panel h2{margin:0 0 10px;font-size:15px;color:var(--acc)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+label{display:block;font-size:12px;color:var(--mut);margin-bottom:3px}
+input,select{width:100%;padding:7px 9px;background:#0d1322;border:1px solid var(--line);border-radius:6px;color:var(--fg);font-size:13px}
+button.act{background:var(--acc);color:#08101f;border:0;border-radius:6px;padding:9px 18px;font-weight:600;cursor:pointer;margin-top:10px}
+button.ghost{background:transparent;color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:7px 14px;cursor:pointer}
+table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;white-space:nowrap}
+th{color:var(--mut);font-weight:600}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px}
+.tag.fractured{background:rgba(87,201,140,.18);color:var(--ok)}
+.tag.censored{background:rgba(245,180,82,.18);color:var(--warn)}
+.tag.variable{background:rgba(90,162,255,.18);color:var(--acc)}
+.tag.excluded{background:rgba(240,106,106,.16);color:var(--bad)}
+.muted{color:var(--mut)}
+.pill{display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;margin:2px 4px 2px 0}
+.pill.interpolated{background:rgba(87,201,140,.16);color:var(--ok)}
+.pill.low{background:rgba(90,162,255,.16);color:var(--acc)}
+.pill.medium{background:rgba(245,180,82,.18);color:var(--warn)}
+.pill.high,.pill.rejected{background:rgba(240,106,106,.18);color:var(--bad)}
+pre{background:#0c1220;border:1px solid var(--line);border-radius:8px;padding:10px;overflow:auto;font-size:12px;max-height:360px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.two{grid-template-columns:1fr}}
+.kv{display:grid;grid-template-columns:160px 1fr;gap:4px 10px;font-size:13px}
+.kv div:nth-child(odd){color:var(--mut)}
+.warnbox{border-left:3px solid var(--warn);padding:8px 12px;background:rgba(245,180,82,.08);border-radius:0 6px 6px 0;margin:8px 0}
+.badbox{border-left:3px solid var(--bad);padding:8px 12px;background:rgba(240,106,106,.08);border-radius:0 6px 6px 0;margin:8px 0}
+.okbox{border-left:3px solid var(--ok);padding:8px 12px;background:rgba(87,201,140,.07);border-radius:0 6px 6px 0;margin:8px 0}
+</style></head><body>
+<header>
+  <h1>持时破裂谱</h1>
+  <span class="sub">蠕变持久断裂寿命主曲线工作台 · Larson-Miller / 受限自定义形式 · 右删失不视为断裂</span>
+</header>
+<nav id="nav">
+  <button data-tab="samples" class="active">样本</button>
+  <button data-tab="fit">拟合</button>
+  <button data-tab="fits">拟合记录</button>
+  <button data-tab="predict">预测与外推</button>
+  <button data-tab="compare">两模型对比</button>
+  <button data-tab="data">数据与重放</button>
+</nav>
+<main>
+<section class="tab active" id="tab-samples">
+  <div class="panel">
+    <h2>试样数据包（断裂 / 右删失 / 变载；同温跨炉次）</h2>
+    <div class="warnbox">右删失样本的 <b>time_h</b> 仅为寿命下界；变载样本仅在启用累积损伤模型（Robinson 线性损伤）时参与拟合。温度入库时必须显式带单位（C/K）。</div>
+    <div style="overflow:auto"><table id="sample-table"><thead><tr>
+      <th>ID</th><th>炉次</th><th>失效准则</th><th>加载</th><th>温度</th><th>应力 MPa</th><th>时间 h</th><th>状态</th><th>载荷段</th><th>备注</th>
+    </tr></thead><tbody></tbody></table></div>
+  </div>
+</section>
+
+<section class="tab" id="tab-fit">
+  <div class="panel">
+    <h2>拟合配置</h2>
+    <div class="grid">
+      <div><label>模型形式</label><select id="f-model"><option value="larson_miller">Larson-Miller（C 固定 20，b2 受限）</option><option value="custom">自定义受限多项式（二次项 ≤ 0）</option></select></div>
+      <div><label>失效准则分组（不可混组）</label><select id="f-criterion"><option value="rupture">rupture（断裂）</option><option value="strain2pct">strain2pct（2% 应变）</option></select></div>
+      <div><label>参考炉次（偏置固定 0）</label><select id="f-refheat"><option>HA</option><option>HB</option></select></div>
+      <div><label>层级收缩 τ (dex)</label><input id="f-tau" type="number" step="0.01" value="0.30"></div>
+      <div><label>累积损伤模型（变载纳入开关）</label><select id="f-damage"><option value="false">禁用：变载样本不参与</option><option value="true">启用：Robinson 线性累积损伤</option></select></div>
+    </div>
+    <h2 style="margin-top:16px">允许外推范围（超出即拒绝，不给延长线）</h2>
+    <div class="grid">
+      <div><label>温度下限 °C</label><input id="f-tmin" type="number" value="400"></div>
+      <div><label>温度上限 °C</label><input id="f-tmax" type="number" value="700"></div>
+      <div><label>应力下限 MPa</label><input id="f-smin" type="number" value="40"></div>
+      <div><label>应力上限 MPa</label><input id="f-smax" type="number" value="320"></div>
+    </div>
+    <button class="act" onclick="runFit()">执行拟合</button>
+  </div>
+  <div class="panel" id="fit-out" style="display:none">
+    <h2>拟合结果</h2>
+    <div id="fit-meta"></div>
+    <div class="two">
+      <div><h3 class="muted">参数</h3><div id="fit-params"></div></div>
+      <div><h3 class="muted">分层炉次偏置</h3><div id="fit-heats"></div></div>
+    </div>
+    <h3 class="muted">样本纳入 / 排除</h3>
+    <div id="fit-inclusion"></div>
+    <h3 class="muted">残差与逐样本删失贡献（NLL）</h3>
+    <div style="overflow:auto"><table id="fit-residuals"></table></div>
+  </div>
+</section>
+
+<section class="tab" id="tab-fits">
+  <div class="panel"><h2>历史拟合记录（运行记录可导出）</h2>
+    <div style="overflow:auto"><table id="fits-table"><thead><tr><th>ID</th><th>时间</th><th>模型</th><th>准则</th><th>损伤模型</th></tr></thead><tbody></tbody></table></div>
+    <div id="fit-detail" style="margin-top:12px"></div>
+  </div>
+</section>
+
+<section class="tab" id="tab-predict">
+  <div class="panel">
+    <h2>寿命预测与外推审计</h2>
+    <div class="grid">
+      <div><label>拟合记录 ID</label><input id="p-fit" type="number" value="1"></div>
+      <div><label>温度数值</label><input id="p-tv" type="number" value="650"></div>
+      <div><label>温度单位（必填）</label><select id="p-tu"><option value="C">C（摄氏度）</option><option value="K">K（开尔文）</option></select></div>
+      <div><label>应力 MPa</label><input id="p-s" type="number" value="200"></div>
+      <div><label>炉次（可选）</label><select id="p-heat"><option value="">基准曲线（无炉次偏置）</option><option>HA</option><option>HB</option></select></div>
+      <div><label>区间 z 值（默认 1.96）</label><input id="p-z" type="number" step="0.01" value="1.96"></div>
+    </div>
+    <button class="act" onclick="predict()">预测</button>
+  </div>
+  <div class="panel" id="pred-out" style="display:none"></div>
+</section>
+
+<section class="tab" id="tab-compare">
+  <div class="panel">
+    <h2>两个模型在同一样本集上比较</h2>
+    <div class="grid">
+      <div><label>拟合 A（ID）</label><input id="c-a" type="number"></div>
+      <div><label>拟合 B（ID）</label><input id="c-b" type="number"></div>
+    </div>
+    <button class="act" onclick="compare()">比较</button>
+    <div id="cmp-out" style="margin-top:12px"></div>
+  </div>
+</section>
+
+<section class="tab" id="tab-data">
+  <div class="panel">
+    <h2>导入 / 导出 / 清空 / 重放复核</h2>
+    <div class="kv">
+      <div>固定 fixture</div><div><span class="muted">fixtures/samples.json（空库首次启动自动种入）</span></div>
+      <div>导出运行记录</div><div><button class="ghost" onclick="exportBundle()">下载 bundle JSON</button></div>
+      <div>清空数据库</div><div><button class="ghost" onclick="resetDb()">清空（samples/fits/audit）</button> <span class="muted">重启后自动重新种入 fixture</span></div>
+    </div>
+    <h3 style="margin-top:14px" class="muted">重放：粘贴 bundle（含样本与拟合规格）→ 清空 → 重导入 → 逐条重拟合复核</h3>
+    <textarea id="replay-box" rows="8" style="width:100%;background:#0d1322;color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:8px" placeholder='{"bundle":{...}} 或 {"samples_raw":[...]}'></textarea>
+    <button class="act" onclick="replay()">执行重放</button>
+    <div id="data-msg"></div>
+  </div>
+  <div class="panel"><h2>审计日志</h2><pre id="audit-box">点击刷新…</pre><button class="ghost" onclick="loadAudit()">刷新审计</button></div>
+</section>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+async function api(path, opts){
+  const r = await fetch(path, opts);
+  return r.json().catch(()=>({error:'非 JSON 响应 '+r.status}));
+}
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#nav button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  $('#tab-'+b.dataset.tab).classList.add('active');
+  if(b.dataset.tab==='samples') loadSamples();
+  if(b.dataset.tab==='fits') loadFits();
+  if(b.dataset.tab==='data') loadAudit();
+});
+function fmt(x,d=4){ if(x===null||x===undefined) return '—'; return Number(x).toFixed(d); }
+function tagFor(s){
+  if(s.status==='censored') return '<span class="tag censored">右删失(下界)</span>';
+  return '<span class="tag fractured">已断裂</span>';
+}
+async function loadSamples(){
+  const j = await api('/api/samples');
+  const tb = $('#sample-table tbody'); tb.innerHTML='';
+  (j.samples||[]).forEach(s=>{
+    const temp = s.load_kind==='variable' ? '（见段）' : `${fmt(s.temp_c,1)} °C / ${fmt(s.temp_k,1)} K`;
+    const stress = s.load_kind==='variable' ? '（见段）' : fmt(s.stress_mpa,1);
+    const segs = (s.segments||[]).map(g=>`${fmt(g.temp_c,0)}°C·${fmt(g.stress_mpa,0)}MPa·${fmt(g.hours_h,1)}h`).join(' → ');
+    tb.insertAdjacentHTML('beforeend',`<tr>
+      <td>${s.id}</td><td>${s.heat}</td><td>${s.criterion}</td>
+      <td>${s.load_kind==='variable'?'<span class="tag variable">变载</span>':'恒载'}</td>
+      <td>${temp}</td><td>${stress}</td><td>${fmt(s.time_h,1)}</td>
+      <td>${tagFor(s)}</td><td style="white-space:normal;max-width:320px">${segs||'—'}</td><td class="muted">${s.note||''}</td></tr>`);
+  });
+}
+function fitBody(){
+  return {
+    model: $('#f-model').value,
+    criterion: $('#f-criterion').value,
+    reference_heat: $('#f-refheat').value,
+    damage_model: $('#f-damage').value==='true',
+    shrink_tau: parseFloat($('#f-tau').value),
+    allow_temp_min_c: parseFloat($('#f-tmin').value),
+    allow_temp_max_c: parseFloat($('#f-tmax').value),
+    allow_stress_min_mpa: parseFloat($('#f-smin').value),
+    allow_stress_max_mpa: parseFloat($('#f-smax').value),
+  };
+}
+async function runFit(){
+  const j = await api('/api/fits',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(fitBody())});
+  if(!j || j.error){ $('#fit-out').style.display='block'; $('#fit-meta').innerHTML=bad('拟合失败: '+(j?(j.error||JSON.stringify(j)):'无响应')); return; }
+  showFit(j);
+  $('#p-fit').value = j.id; $('#c-a').value = j.id;
+}
+function bad(t){return `<div class="badbox">${t}</div>`;}
+function showFit(j){
+  $('#fit-out').style.display='block';
+  const r=j.result, env=j.envelope;
+  $('#fit-meta').innerHTML=`<div class="kv">
+    <div>拟合 ID</div><div>${j.id}</div>
+    <div>收敛</div><div>${r.converged?'<span class="pill interpolated">是</span>':'<span class="pill high">否</span>'}</div>
+    <div>−ln L / AIC / BIC</div><div>${fmt(r.nll,3)} / ${fmt(r.aic,2)} / ${fmt(r.bic,2)}</div>
+    <div>残差标准差 σ</div><div>${fmt(r.sigma_dex,4)} dex（log10 小时）</div>
+    <div>实验包络</div><div>${(env.temp_min_k-273.15).toFixed(0)}–${(env.temp_max_k-273.15).toFixed(0)} °C，${fmt(env.stress_min_mpa,0)}–${fmt(env.stress_max_mpa,0)} MPa</div></div>`;
+  $('#fit-params').innerHTML='<table><thead><tr><th>参数</th><th>值</th><th>SE</th><th>受限/固定</th></tr></thead><tbody>'+
+    r.params.map(p=>`<tr><td>${p.name}</td><td>${fmt(p.value,5)}</td><td>${p.se==null?'固定':fmt(p.se,5)}</td><td class="muted">${p.constraint}</td></tr>`).join('')+'</tbody></table>';
+  $('#fit-heats').innerHTML='<table><thead><tr><th>炉次</th><th>偏置 dex</th><th>SE</th><th>说明</th></tr></thead><tbody>'+
+    r.heat_bias.map(p=>`<tr><td>${p.name}</td><td>${fmt(p.value,4)}</td><td>${p.se==null?'—':fmt(p.se,4)}</td><td class="muted">${p.constraint}</td></tr>`).join('')+'</tbody></table>';
+  const incPills=(j.included||[]).map(x=>`<span class="pill interpolated">${x}</span>`).join('');
+  const excRows=(j.excluded||[]).map(x=>`<span class="pill rejected">${x.id}：${x.reason}</span>`).join('');
+  $('#fit-inclusion').innerHTML=`<div class="okbox">纳入 ${j.included.length} 个：<br>${incPills}</div>
+    <div class="warnbox">排除 ${j.excluded.length} 个：<br>${excRows||'<span class="muted">无</span>'}</div>`;
+  $('#fit-residuals').innerHTML='<thead><tr><th>样本</th><th>炉次</th><th>类型</th><th>观测</th><th>拟合 log10t</th><th>残差 dex</th><th>NLL 贡献</th></tr></thead><tbody>'+
+    r.residuals.map(x=>`<tr><td>${x.sample_id}</td><td>${x.heat}</td><td>${x.variable?'<span class="tag variable">变载</span>':'恒载'}</td>
+      <td>${x.obs==='exact'?'断裂':'<span class="tag censored">右删失</span>'}</td>
+      <td>${x.fitted_log10?fmt(x.fitted_log10,3):'损伤等效'}</td>
+      <td>${x.residual_dex==null?'下界，无点残差':fmt(x.residual_dex,3)}</td><td>${fmt(x.nll_contribution,3)}</td></tr>`).join('')+'</tbody></table>';
+}
+async function loadFits(){
+  const j = await api('/api/fits');
+  const tb=$('#fits-table tbody'); tb.innerHTML='';
+  (j.fits||[]).forEach(f=>tb.insertAdjacentHTML('beforeend',
+    `<tr style="cursor:pointer" onclick="showFitRecord(${f.id})"><td>${f.id}</td><td>${f.created_at}</td><td>${f.model}</td><td>${f.criterion}</td><td>${f.damage_model?'Robinson 损伤':'禁用（变载排除）'}</td></tr>`));
+}
+async function showFitRecord(id){
+  const j=await api('/api/fits/'+id);
+  const c=j.config, env=j.envelope;
+  $('#fit-detail').innerHTML=`<div class="panel" style="margin:0">
+    <h2>Fit #${id}</h2>
+    <div class="kv">
+      <div>模型 / 准则</div><div>${j.model} / ${j.criterion}</div>
+      <div>损伤模型</div><div>${j.damage_model?'启用 Robinson':'禁用'}</div>
+      <div>参考炉次</div><div>${c.reference_heat}（收缩 τ=${c.shrink_tau}）</div>
+      <div>允许外推</div><div>${c.allow_temp_min_c}–${c.allow_temp_max_c} °C；${c.allow_stress_min_mpa}–${c.allow_stress_max_mpa} MPa</div>
+      <div>实验包络</div><div>${(env.temp_min_k-273.15).toFixed(0)}–${(env.temp_max_k-273.15).toFixed(0)} °C；${fmt(env.stress_min_mpa,0)}–${fmt(env.stress_max_mpa,0)} MPa</div>
+      <div>纳入样本</div><div>${(j.included||[]).join(', ')}</div>
+      <div>排除样本</div><div>${(j.excluded||[]).map(x=>x.id+'('+x.reason+')').join('；')||'无'}</div>
+    </div></div>`;
+}
+function riskPill(r){ return `<span class="pill ${r}">${ {interpolated:'包络内插值',low:'外推·低风险',medium:'外推·中风险',high:'外推·高风险',rejected:'超出允许范围·拒绝'}[r]||r}</span>`; }
+async function predict(){
+  const body={fit_id:parseInt($('#p-fit').value),temp_value:parseFloat($('#p-tv').value),temp_unit:$('#p-tu').value,
+    stress_mpa:parseFloat($('#p-s').value),heat:$('#p-heat').value||null,pi_z:parseFloat($('#p-z').value)};
+  const j=await api('/api/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const box=$('#pred-out'); box.style.display='block';
+  if(j.error){ box.innerHTML=bad(j.error); return; }
+  const p=j.prediction;
+  box.innerHTML=`<h2>预测结果 ${riskPill(p.risk)}</h2>
+    ${j.rejected?'<div class="badbox"><b>拒绝外推：</b>'+p.warning+'。不输出曲线延长值。</div>':
+      p.inside_envelope?'<div class="okbox">预测点位于实验包络内部。</div>':'<div class="warnbox"><b>外推提示：</b>'+p.warning+'</div>'}
+    <div class="kv">
+      <div>中位寿命（log10 小时）</div><div>${fmt(p.mean_log10_h,4)} dex</div>
+      <div>中位寿命（小时）</div><div>${fmt(p.median_h,1)} h</div>
+      <div>${fmt(p.pi_level*100,1)}% 预测区间</div><div>${fmt(p.pi_low_h,1)} – ${fmt(p.pi_high_h,1)} h</div>
+      <div>归一化包络距离</div><div>${fmt(p.normalized_distance,3)}（0 = 包络内）</div>
+      <div>外推杠杆度</div><div>${fmt(p.extrapolation_leverage,3)}（参数方差 / 噪声方差）</div>
+      <div>边界活跃</div><div>${(p.boundary_active.length?p.boundary_active:['无']).map(x=>`<span class="pill low">${x}</span>`).join('')}</div>
+      <div>温度 / 应力</div><div>${(p.temp_k-273.15).toFixed(1)} °C (${fmt(p.temp_k,1)} K) / ${fmt(p.stress_mpa,1)} MPa</div>
+    </div>`;
+}
+async function compare(){
+  const a=$('#c-a').value,b=$('#c-b').value;
+  const j=await api(`/api/compare?a=${a}&b=${b}`);
+  const box=$('#cmp-out');
+  if(j.error){ box.innerHTML=bad(j.error); return; }
+  box.innerHTML=`<div class="okbox">共同样本 ${j.common_samples} 个；样本集合${j.same_sample_set?'一致':'不一致'}。</div>
+    ${j.only_in_a.length?`<div class="warnbox">仅在 A 纳入：${j.only_in_a.join(', ')}</div>`:''}
+    ${j.only_in_b.length?`<div class="warnbox">仅在 B 纳入：${j.only_in_b.join(', ')}</div>`:''}
+    <div class="two"><div class="panel"><b>拟合 A (#${j.fit_a.id}, ${j.fit_a.model})</b>
+      <div class="kv"><div>AIC / BIC</div><div>${fmt(j.fit_a.aic,2)} / ${fmt(j.fit_a.bic,2)}</div><div>σ / −lnL</div><div>${fmt(j.fit_a.sigma_dex,3)} / ${fmt(j.fit_a.nll,2)}</div></div></div>
+      <div class="panel"><b>拟合 B (#${j.fit_b.id}, ${j.fit_b.model})</b>
+      <div class="kv"><div>AIC / BIC</div><div>${fmt(j.fit_b.aic,2)} / ${fmt(j.fit_b.bic,2)}</div><div>σ / −lnL</div><div>${fmt(j.fit_b.sigma_dex,3)} / ${fmt(j.fit_b.nll,2)}</div></div></div></div>
+    <table><thead><tr><th>样本</th><th>A 残差</th><th>B 残差</th><th>A NLL</th><th>B NLL</th></tr></thead><tbody>
+    ${j.rows.map(r=>`<tr><td>${r.sample_id}</td><td>${r.model_a_residual==null?'—':fmt(r.model_a_residual,3)}</td><td>${r.model_b_residual==null?'—':fmt(r.model_b_residual,3)}</td><td>${fmt(r.model_a_nll,3)}</td><td>${fmt(r.model_b_nll,3)}</td></tr>`).join('')}
+    </tbody></table>`;
+}
+async function exportBundle(){
+  const j=await api('/api/export');
+  const blob=new Blob([JSON.stringify(j,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='rupture-bundle.json'; a.click();
+}
+async function resetDb(){
+  if(!confirm('确认清空全部样本、拟合与审计记录？')) return;
+  const j=await api('/api/reset',{method:'POST'});
+  $('#data-msg').innerHTML=j.ok?'<div class="okbox">已清空。重启服务后自动重新种入固定 fixture。</div>':bad(JSON.stringify(j));
+}
+async function replay(){
+  let payload;
+  try{ payload=JSON.parse($('#replay-box').value); }catch(e){ $('#data-msg').innerHTML=bad('JSON 解析失败: '+e); return; }
+  const body = payload.bundle ? {bundle:payload.bundle} : {samples_raw:payload.samples_raw};
+  const j=await api('/api/replay',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  $('#data-msg').innerHTML=j.ok?`<div class="okbox">重放完成：重导入 ${j.samples} 个样本，重拟合 ${j.refits.length} 次。</div><pre>${JSON.stringify(j.refits,null,2)}</pre>`:bad(j.error||JSON.stringify(j));
+  loadSamples(); loadFits();
+}
+async function loadAudit(){
+  const j=await api('/api/audit');
+  $('#audit-box').textContent=(j.audit||[]).map(x=>`#${x.id} [${x.at}] ${x.action}`).join('\n');
+}
+loadSamples();
+</script></body></html>
