@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>持时破裂谱 · 蠕变持久主曲线工作台</title>
+<style>
+:root{--bg:#0f1419;--panel:#171e26;--line:#2a3644;--fg:#e6edf3;--mut:#8fa3b5;--ok:#3fb950;--warn:#d29922;--bad:#f85149;--accent:#58a6ff;--accent2:#bc8cff;}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.55 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--fg)}
+header{padding:18px 24px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
+header h1{margin:0;font-size:22px;letter-spacing:2px}
+header .sub{color:var(--mut);font-size:13px}
+main{display:grid;grid-template-columns:360px 1fr;gap:16px;padding:16px 24px}
+@media(max-width:1100px){main{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+.card h2{margin:0 0 12px;font-size:15px;color:var(--accent)}
+label{display:block;font-size:12px;color:var(--mut);margin:10px 0 4px}
+input,select{width:100%;background:#0d1117;border:1px solid var(--line);color:var(--fg);border-radius:6px;padding:7px 9px;font-size:13px}
+input:focus,select:focus{outline:1px solid var(--accent)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.row4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}
+button{cursor:pointer;border:1px solid var(--line);background:#213044;color:var(--fg);border-radius:7px;padding:8px 12px;font-size:13px}
+button.primary{background:#1f6feb;border-color:#1f6feb;color:#fff}
+button:hover{filter:brightness(1.15)}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{border-bottom:1px solid var(--line);padding:5px 7px;text-align:left;vertical-align:top}
+th{color:var(--mut);font-weight:600;position:sticky;top:0;background:var(--panel)}
+.tag{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;border:1px solid var(--line)}
+.tag.rup{color:var(--ok);border-color:var(--ok)}
+.tag.cen{color:var(--warn);border-color:var(--warn)}
+.tag.var{color:var(--accent2);border-color:var(--accent2)}
+.tag.excl{color:var(--bad);border-color:var(--bad)}
+.tag.low{color:var(--ok);border-color:var(--ok)}
+.tag.medium{color:var(--warn);border-color:var(--warn)}
+.tag.high{color:var(--bad);border-color:var(--bad)}
+.scroll{max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+.muted{color:var(--mut);font-size:12px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 14px;font-size:13px}
+.kv dt{color:var(--mut)}
+.kv dd{margin:0}
+.pill{font-size:11px;padding:1px 8px;border-radius:10px;background:#213044;color:var(--accent)}
+canvas{width:100%;background:#0d1117;border:1px solid var(--line);border-radius:8px}
+.blocked{color:var(--bad)}
+.allowed{color:var(--ok)}
+.warnbox{background:#2d2410;border:1px solid #6b4f12;border-radius:8px;padding:8px 12px;margin:8px 0;font-size:12px;color:#f0c674}
+.infobox{background:#10231c;border:1px solid #1c4d38;border-radius:8px;padding:8px 12px;margin:8px 0;font-size:12px;color:#7ee2a8}
+.tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.tabs button.active{background:#1f6feb;border-color:#1f6feb;color:#fff}
+.hidden{display:none}
+.num{font-variant-numeric:tabular-nums;text-align:right}
+.comparebox{border:1px dashed var(--accent);border-radius:8px;padding:10px;margin-top:10px}
+a{color:var(--accent)}
+.smallbtn{padding:3px 8px;font-size:11px}
+</style>
+</head>
+<body>
+<header>
+  <h1>持时破裂谱</h1>
+  <span class="sub">蠕变持久寿命主曲线工作台 · Larson-Miller / 自定义受限形式 · 右删失与变载损伤的诚实处理</span>
+  <span style="flex:1"></span>
+  <span class="pill" id="countPill">试样 -</span>
+</header>
+<main>
+<section>
+  <div class="card">
+    <h2>① 数据管理</h2>
+    <div class="btns">
+      <button id="btnLoadFixture" class="primary">载入固定 fixture</button>
+      <button id="btnRefresh">刷新</button>
+      <button id="btnClear">清空数据库</button>
+      <a href="/api/runs/export"><button class="smallbtn">导出运行记录 JSON</button></a>
+    </div>
+    <div id="dataMsg" class="muted" style="margin-top:8px"></div>
+    <label>新增试样（温度单位必须显式给出 C 或 K）</label>
+    <div class="scroll">
+      <textarea id="newSpec" rows="8" style="width:100%;background:#0d1117;color:var(--fg);border:1px solid var(--line);border-radius:6px;font-size:12px" placeholder='[{"specimen_id":"X1","heat":"A","temp_value":575,"temp_unit":"C","stress_mpa":90,"time_h":100,"outcome":"censored","criterion":"rupture"}]'></textarea>
+    </div>
+    <div class="btns"><button id="btnImport">导入 JSON 试样</button></div>
+  </div>
+
+  <div class="card">
+    <h2>② 拟合配置</h2>
+    <label>失效准则（不同准则绝不混为一组）</label>
+    <select id="criterion"><option value="rupture">rupture（断裂）</option><option value="strain_1pct">strain_1pct（1% 蠕变应变）</option></select>
+    <label>模型形式</label>
+    <select id="model"><option value="LM">Larson-Miller：P=T(C+log t)=a0+a1σ+a2σ²</option><option value="CX">自定义受限：log t=β+γ·x+q·x²+α/T，x=log10σ</option></select>
+    <label class="muted" style="display:flex;gap:8px;align-items:center;color:var(--fg);margin-top:10px">
+      <input type="checkbox" id="damage" style="width:auto"> 启用 Robinson 线性累积损伤模型（启用后变载样本才参与拟合）
+    </label>
+    <label>炉次层级偏置收缩强度 λ（对非基准炉次偏移的岭收缩）</label>
+    <input id="shrink" type="number" step="0.1" value="1.0">
+    <label>允许外推的温度范围 (°C)</label>
+    <div class="row2"><input id="tmin" type="number" placeholder="默认=包络下限"><input id="tmax" type="number" placeholder="默认=包络上限"></div>
+    <label>允许外推的应力范围 (MPa)</label>
+    <div class="row2"><input id="smin" type="number" placeholder="默认=包络下限"><input id="smax" type="number" placeholder="默认=包络上限"></div>
+  </div>
+
+  <div class="card">
+    <h2>③ 预测目标</h2>
+    <div id="targets"></div>
+    <div class="btns">
+      <button class="smallbtn" onclick="addTarget()">+ 增加目标</button>
+      <button class="smallbtn" onclick="addDemoTargets()">填入验收演示点</button>
+      <button class="smallbtn" onclick="clearTargets()">清空</button>
+    </div>
+    <div class="btns"><button id="btnFit" class="primary" style="flex:1">拟合并预测</button></div>
+  </div>
+
+  <div class="card">
+    <h2>④ 同一样本组上比较两个模型</h2>
+    <div class="muted">仅当两次运行失效准则相同且纳入样本集合完全一致时允许比较。</div>
+    <div class="row2" style="margin-top:6px">
+      <select id="runA"></select><select id="runB"></select>
+    </div>
+    <div class="btns"><button id="btnCompare">比较 AIC</button></div>
+    <div id="cmpOut" class="comparebox hidden"></div>
+  </div>
+</section>
+
+<section>
+  <div class="card">
+    <h2>主曲线与数据</h2>
+    <canvas id="chart" height="320"></canvas>
+    <div class="muted" style="margin-top:6px">
+      ● 断裂样本　▸ 右删失（寿命只给下界，绝非在截止时刻断裂）　◆ 变载样本　× 被拒绝的外推；
+      实线＝实验包络内，虚线＝允许的外推（标注风险）。
+    </div>
+  </div>
+  <div class="card" id="summaryCard" style="display:none">
+    <h2>拟合摘要</h2>
+    <div id="summary"></div>
+  </div>
+  <div class="tabs" id="resultTabs" style="display:none">
+    <button data-tab="params" class="active">参数</button>
+    <button data-tab="incl">样本纳入</button>
+    <button data-tab="res">残差</button>
+    <button data-tab="cen">删失贡献</button>
+    <button data-tab="pred">预测 / 外推杠杆</button>
+    <button data-tab="runs">历史运行</button>
+  </div>
+  <div class="card" id="tab-params"></div>
+  <div class="card hidden" id="tab-incl"></div>
+  <div class="card hidden" id="tab-res"></div>
+  <div class="card hidden" id="tab-cen"></div>
+  <div class="card hidden" id="tab-pred"></div>
+  <div class="card hidden" id="tab-runs"></div>
+</section>
+</main>
+<script>
+let SPECIMENS=[]; let LAST=null; let RUNS=[];
+const $=id=>document.getElementById(id);
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function fmt(v,d=3){if(v===null||v===undefined||Number.isNaN(v))return '—';return Number(v).toLocaleString('en-US',{maximumFractionDigits:d})}
+function opt(v){return v===null||v===undefined||v===''?null:Number(v)}
+
+function targetRow(t){t=t||{};return `<div class="row4" style="margin-bottom:6px">
+  <input class="t-tc" type="number" value="${t.tc??''}" placeholder="温度">
+  <select class="t-unit"><option value="C" ${t.unit!=='K'?'selected':''}>°C</option><option value="K" ${t.unit==='K'?'selected':''}>K</option></select>
+  <input class="t-s" type="number" value="${t.s??''}" placeholder="应力 MPa">
+  <select class="t-h"><option value="">基准炉次</option>${heatOptions(t.h)}</select>
+</div>`}
+function heatOptions(cur){return [...new Set(SPECIMENS.map(s=>s.heat))].sort().map(h=>`<option ${h===cur?'selected':''}>${esc(h)}</option>`).join('')}
+function addTarget(t){$('targets').insertAdjacentHTML('beforeend',targetRow(t))}
+function clearTargets(){$('targets').innerHTML=''}
+function addDemoTargets(){clearTargets();
+  addTarget({tc:550,unit:'C',s:100});
+  addTarget({tc:625,unit:'C',s:50});
+  addTarget({tc:650,unit:'C',s:30});
+}
+
+async function api(path,opts){const r=await fetch(path,opts);const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||('HTTP '+r.status));return j}
+
+async function refresh(){
+  const d=await api('/api/specimens');SPECIMENS=d.specimens;
+  $('countPill').textContent=`试样 ${SPECIMENS.length}`;
+  // 更新目标中的炉次选项保持已选
+  document.querySelectorAll('.t-h').forEach(sel=>{const v=sel.value;sel.innerHTML='<option value="">基准炉次</option>'+heatOptions(v);sel.value=v});
+  drawChart();
+}
+async function loadFixture(){
+  const d=await api('/api/fixtures/load',{method:'POST'});
+  $('dataMsg').innerHTML=`<span class="allowed">已载入 fixture：导入 ${d.imported}，重复跳过 ${d.skipped_duplicate}，拒收 ${d.rejected.length}</span>`;
+  await refresh();await loadRunsList();
+}
+async function clearDb(){
+  if(!confirm('确认清空全部试样与导入记录？运行记录保留。之后可用“载入固定 fixture”重放。'))return;
+  await api('/api/specimens/clear',{method:'POST'});$('dataMsg').textContent='数据库已清空，可重新导入复核。';
+  await refresh();
+}
+async function importSpec(){
+  let arr;try{arr=JSON.parse($('newSpec').value)}catch(e){alert('JSON 解析失败: '+e.message);return}
+  if(!Array.isArray(arr))arr=[arr];
+  const d=await api('/api/specimens',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({source:'manual-ui',specimens:arr})});
+  let msg=`收到 ${d.received}，导入 ${d.imported}，重复跳过 ${d.skipped_duplicate}`;
+  if(d.rejected.length)msg+=`<br><span class="blocked">拒收：${d.rejected.map(esc).join('<br>')}</span>`;
+  $('dataMsg').innerHTML=msg;await refresh();
+}
+
+function collectTargets(){
+  return [...document.querySelectorAll('#targets > div')].map(div=>({
+    temp_value:Number(div.querySelector('.t-tc').value),
+    temp_unit:div.querySelector('.t-unit').value,
+    stress_mpa:Number(div.querySelector('.t-s').value),
+    heat:div.querySelector('.t-h').value||null,
+  })).filter(t=>Number.isFinite(t.temp_value)&&Number.isFinite(t.stress_mpa)&&t.stress_mpa>0);
+}
+
+async function runFit(){
+  const body={model:$('model').value,criterion:$('criterion').value,
+    damage_model:$('damage').checked,shrink:Number($('shrink').value)||1.0,
+    min_temp_c:opt($('tmin').value),max_temp_c:opt($('tmax').value),
+    min_stress_mpa:opt($('smin').value),max_stress_mpa:opt($('smax').value),
+    targets:collectTargets()};
+  try{
+    const d=await api('/api/fit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+    LAST=d.result;renderResult(d.result,d.run_id);drawChart();await loadRunsList();
+  }catch(e){alert('拟合被拒绝：\n'+e.message)}
+}
+
+function renderResult(r,runId){
+  $('resultTabs').style.display='flex';$('summaryCard').style.display='block';
+  $('summary').innerHTML=`<dl class="kv">
+    <dt>运行 #</dt><dd>${runId} · 模型 <b>${r.model}</b> · 准则 <b>${esc(r.criterion)}</b> · 损伤模型 ${r.damage_model?'<span class="allowed">启用</span>':'<span class="blocked">禁用（变载不参与）</span>'}</dd>
+    <dt>样本数</dt><dd>纳入 ${r.n_included}（断裂 ${r.n_ruptured} / 右删失 ${r.n_censored} / 变载 ${r.n_variable}），自由参数 ${r.n_free_params}，λ=${r.shrink}</dd>
+    <dt>对数似然 / AIC</dt><dd>log L = ${fmt(r.log_likelihood,4)}　AIC = ${fmt(r.aic,2)}　残差标准差 τ = ${fmt(r.tau_log10h,4)} log10(h)</dd>
+    <dt>实验包络</dt><dd>${fmt(r.envelope.min_temp_c,1)}–${fmt(r.envelope.max_temp_c,1)} °C，${fmt(r.envelope.min_stress_mpa,1)}–${fmt(r.envelope.max_stress_mpa,1)} MPa；炉次 ${r.envelope.heats.join(' / ')}；温度水平 ${r.envelope.n_temps} 个</dd>
+  </dl>`+(r.warnings.length?`<div class="warnbox">${r.warnings.map(esc).join('<br>')}</div>`:'');
+
+  const paramRows=r.params.map(p=>`<tr><td>${esc(p.name)}</td><td class="num">${fmt(p.value,5)}</td><td class="num">${p.se===null?'—':fmt(p.se,5)}</td><td>${esc(p.note)}</td></tr>`).join('');
+  const heatRows=r.heat_offsets.map(p=>`<tr><td>${esc(p.name)}</td><td class="num">${fmt(p.value,4)}</td><td class="num">${p.se===null?'—':fmt(p.se,4)}</td><td>${esc(p.note)}</td></tr>`).join('');
+  $('tab-params').innerHTML=`<h2>参数（含标准误，由观测信息矩阵；奇异时岭加载并告警）</h2>
+    <table><thead><tr><th>参数</th><th>估计</th><th>SE</th><th>说明</th></tr></thead>
+    <tbody>${paramRows}${heatRows}</tbody></table>`;
+
+  $('tab-incl').innerHTML=`<h2>样本纳入集合</h2><div class="muted">禁用损伤模型时，3 个变载样本应全部出现在排除列表；准则不同的试样永远排除。</div>
+    <div class="scroll"><table><thead><tr><th>试样</th><th>炉次</th><th>°C</th><th>MPa</th><th>结局</th><th>纳入</th><th>原因</th></tr></thead><tbody>
+    ${r.inclusion.map(x=>`<tr><td>${esc(x.specimen_id)}</td><td>${esc(x.heat)}</td><td>${fmt(x.temp_c,1)}</td>
+      <td>${x.stress_mpa?fmt(x.stress_mpa,1):'变载'}</td>
+      <td>${x.variable?'<span class="tag var">变载</span> ':''}${x.censored?'<span class="tag cen">删失</span>':'<span class="tag rup">断裂</span>'}</td>
+      <td>${x.included?'<span class="tag low">是</span>':'<span class="tag excl">否</span>'}</td><td>${esc(x.reason)}</td></tr>`).join('')}
+    </tbody></table></div>`;
+
+  const xLabel=r.model==='LM'?'σ (MPa)':'log10 σ';
+  $('tab-res').innerHTML=`<h2>残差（断裂样本给点残差；右删失只给尾部概率，不伪造残差）</h2>
+    <div class="muted" style="margin-bottom:6px">变载样本显示其首个载荷段的自变量；完整段明细见“样本纳入”与试样数据。</div>
+    <div class="scroll"><table><thead><tr><th>试样</th><th>炉次</th><th>°C</th><th>${xLabel}</th><th>类型</th><th>观测</th><th>预测 log10 h</th><th>残差</th><th>标准化</th><th>log L 贡献</th></tr></thead><tbody>
+    ${r.residuals.map(x=>`<tr><td>${esc(x.specimen_id)}</td><td>${esc(x.heat)}</td><td>${fmt(x.temp_c,1)}</td><td class="num">${fmt(x.x,3)}</td>
+      <td>${x.variable?'<span class="tag var">变载</span>':''}${x.censored?'<span class="tag cen">删失</span>':'<span class="tag rup">断裂</span>'}</td>
+      <td>${esc(x.observed)}</td><td class="num">${fmt(x.predicted_log10_h,3)}</td>
+      <td class="num">${x.residual===null?'—':fmt(x.residual,3)}</td>
+      <td class="num">${x.std_residual===null?'—':fmt(x.std_residual,2)}</td>
+      <td class="num">${fmt(x.contribution,4)}</td></tr>`).join('')}
+    </tbody></table></div>`;
+
+  const ce=r.censoring.entries;
+  $('tab-cen').innerHTML=`<h2>删失贡献（${r.censoring.n_censored} 个右删失样本）</h2>
+    <div class="infobox">右删失的含义是“到截止时刻尚未断裂”，似然只使用存活概率 P(T &gt; t_stop)；<b>不会</b>把它当成在截止时刻恰好断裂。</div>
+    <div class="scroll"><table><thead><tr><th>试样</th><th>口径</th><th>log L</th><th>截止时存活概率</th><th>累积损伤 D（变载）</th></tr></thead><tbody>
+    ${ce.map(x=>`<tr><td>${esc(x.specimen_id)}</td><td>${esc(x.meaning)}</td>
+      <td class="num">${fmt(x.log_likelihood,4)}</td><td class="num">${fmt(x.survival_probability_at_stop,5)}</td>
+      <td class="num">${x.cumulative_damage===null?'—':fmt(x.cumulative_damage,3)}</td></tr>`).join('')}
+    </tbody></table></div>`;
+
+  $('tab-pred').innerHTML=`<h2>预测区间、外推距离与杠杆度</h2>
+    <div class="muted">杠杆度截断阈值 ≈ 2p/n = ${r.leverage_cutoff}；超出即标记高风险。包络外预测必须显示距离、区间和边界活跃情况，不允许用曲线延长线掩盖。</div>
+    <div class="scroll"><table><thead><tr><th>目标</th><th>炉次</th><th>位置</th><th>距离 Δ°C</th><th>距离 ΔMPa</th><th>归一化</th><th>中位寿命 h</th><th>95% 预测区间 h</th><th>杠杆度</th><th>风险/边界</th></tr></thead><tbody>
+    ${r.predictions.map(p=>`<tr><td>${fmt(p.input.temp_c,1)}°C ${fmt(p.input.stress_mpa,1)}MPa</td><td>${esc(p.heat)}</td>
+      <td>${p.within_envelope?'<span class="tag low">包络内</span>':'<span class="tag high">包络外</span>'}</td>
+      <td class="num">${p.distance_temp_c||'0'}</td><td class="num">${p.distance_stress_mpa||'0'}</td><td class="num">${p.normalized_distance}</td>
+      <td class="num"><b>${fmt(p.median_h,2)}</b></td><td class="num">[${fmt(p.pi_low_h,2)}, ${fmt(p.pi_high_h,2)}]</td>
+      <td class="num">${fmt(p.leverage,4)}</td>
+      <td>${p.allowed?'<span class="allowed">允许</span>':'<span class="blocked">拒绝外推</span>'} <span class="tag ${p.risk}">${p.risk}</span>
+        ${p.boundary_active.length?`<div class="muted">⚠ ${p.boundary_active.map(esc).join('；')}</div>`:''}
+        ${p.blocked_by?`<div class="blocked">${esc(p.blocked_by)}</div>`:''}</td></tr>`).join('')}
+    </tbody></table></div>`;
+  switchTab('params');
+}
+
+function switchTab(name){
+  document.querySelectorAll('#resultTabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
+  ['params','incl','res','cen','pred','runs'].forEach(t=>$('tab-'+t).classList.toggle('hidden',t!==name));
+}
+document.querySelectorAll('#resultTabs button').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+
+async function loadRunsList(){
+  const d=await api('/api/runs');RUNS=d.runs;
+  const opts=i=>RUNS.map(r=>`<option value="${r.id}" ${Number(i)===r.id?'selected':''}>#${r.id} ${esc(r.result?.model||'?')} / ${esc(r.result?.criterion||'?')} / 损伤${r.result?.damage_model?'开':'关'} / n=${r.result?.n_included}</option>`).join('');
+  $('runA').innerHTML=opts(RUNS[RUNS.length-2]?.id);$('runB').innerHTML=opts(RUNS[RUNS.length-1]?.id);
+  $('tab-runs').innerHTML=`<h2>历史运行（可导出）</h2><div class="scroll"><table><thead><tr><th>#</th><th>名称</th><th>模型</th><th>准则</th><th>损伤</th><th>n</th><th>AIC</th><th>时间戳</th></tr></thead><tbody>
+    ${RUNS.map(r=>`<tr><td>${r.id}</td><td>${esc(r.name||'')}</td><td>${esc(r.result?.model)}</td><td>${esc(r.result?.criterion)}</td>
+      <td>${r.result?.damage_model?'开':'关'}</td><td>${r.result?.n_included}</td><td class="num">${fmt(r.result?.aic,2)}</td><td>${new Date(Number(r.created_at_unix)*1000).toLocaleString()}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+async function compareRuns(){
+  const out=$('cmpOut');out.classList.remove('hidden');
+  try{
+    const d=await api('/api/compare',{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({run_a:Number($('runA').value),run_b:Number($('runB').value)})});
+    out.innerHTML=`<div class="infobox">${esc(d.note)}</div>
+      <table><tbody>
+      <tr><th></th><th>运行 A #${d.run_a.id}</th><th>运行 B #${d.run_b.id}</th></tr>
+      <tr><td>模型</td><td>${esc(d.run_a.model)}</td><td>${esc(d.run_b.model)}</td></tr>
+      <tr><td>损伤模型</td><td>${d.run_a.damage_model?'启用':'禁用'}</td><td>${d.run_b.damage_model?'启用':'禁用'}</td></tr>
+      <tr><td>同一样本数</td><td colspan="2">${d.same_samples} 个（准则 ${esc(d.same_criterion)}）</td></tr>
+      <tr><td>AIC</td><td class="num">${fmt(d.run_a.aic,2)}</td><td class="num">${fmt(d.run_b.aic,2)}</td></tr>
+      <tr><td>ΔAIC (A−B)</td><td colspan="2" class="num">${fmt(d.delta_aic,3)}</td></tr>
+      <tr><td>AIC 偏好</td><td colspan="2"><b>运行 #${d.preferred_by_aic}</b></td></tr>
+      </tbody></table>`;
+  }catch(e){out.innerHTML=`<div class="warnbox">无法比较：${esc(e.message)}</div>`}
+}
+
+/* ---------- Canvas 主曲线 ---------- */
+function drawChart(){
+  const cv=$('chart');const dpr=window.devicePixelRatio||1;
+  const W=cv.clientWidth||800,H=320;cv.width=W*dpr;cv.height=H*dpr;
+  const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+  const ml=58,mr=160,mt=18,mb=42;
+  const data=SPECIMENS.filter(s=>$('criterion')?s.criterion===($('criterion')?.value||'rupture'):true);
+  if(!data.length){ctx.fillStyle='#8fa3b5';ctx.font='14px sans-serif';ctx.fillText('暂无数据：点击“载入固定 fixture”',W/2-120,H/2);drawLegend(ctx,W);return}
+  const xs=data.flatMap(s=>s.variable?s.segments.map(g=>g.stress_mpa):[s.stress_mpa]);
+  const ys=data.map(s=>Math.log10(s.time_h));
+  const xmin=Math.min(...xs)*0.9,xmax=Math.max(...xs)*1.05;
+  const ymin=Math.min(...ys)-0.4,ymax=Math.max(...ys)+0.4;
+  const X=v=>ml+(Math.log10(v)-Math.log10(xmin))/(Math.log10(xmax)-Math.log10(xmin))*(W-ml-mr);
+  const Y=v=>mt+(ymax-v)/(ymax-ymin)*(H-mt-mb);
+  // 网格
+  ctx.strokeStyle='#222c38';ctx.fillStyle='#8fa3b5';ctx.font='11px sans-serif';ctx.lineWidth=1;
+  for(let i=0;i<=5;i++){const lv=Math.log10(xmin)+(Math.log10(xmax)-Math.log10(xmin))*i/5;
+    const x=ml+i*(W-ml-mr)/5;ctx.beginPath();ctx.moveTo(x,mt);ctx.lineTo(x,H-mb);ctx.stroke();
+    ctx.fillText(Math.pow(10,lv).toFixed(0),x-12,H-mb+16)}
+  for(let i=0;i<=5;i++){const v=ymin+(ymax-ymin)*i/5;const y=mt+i*(H-mt-mb)/5;
+    ctx.beginPath();ctx.moveTo(ml,y);ctx.lineTo(W-mr,y);ctx.stroke();
+    ctx.fillText(v.toFixed(1),8,y+4)}
+  ctx.fillStyle='#e6edf3';ctx.fillText('log10(应力 MPa) →',W-260,H-8);
+  ctx.save();ctx.translate(16,mt+120);ctx.rotate(-Math.PI/2);ctx.fillText('log10(时间 h)',0,0);ctx.restore();
+  // 点
+  for(const s of data){
+    const stress=s.variable?s.segments[0].stress_mpa:s.stress_mpa;
+    const x=X(stress),y=Y(Math.log10(s.time_h));
+    let color='#3fb950',sym='circle';
+    if(s.variable){color='#bc8cff';sym='diamond'}
+    else if(s.outcome==='censored'){color='#d29922';sym='arrow'}
+    ctx.fillStyle=color;ctx.strokeStyle=color;ctx.lineWidth=2;
+    if(sym==='circle'){ctx.beginPath();ctx.arc(x,y,4,0,7);ctx.fill()}
+    else if(sym==='diamond'){ctx.beginPath();ctx.moveTo(x,y-5);ctx.lineTo(x+5,y);ctx.lineTo(x,y+5);ctx.lineTo(x-5,y);ctx.closePath();ctx.fill()}
+    else{ // 右删失：向右的开放箭头表示寿命下界
+      ctx.beginPath();ctx.moveTo(x,y-5);ctx.lineTo(x+9,y);ctx.lineTo(x,y+5);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x-2,y);ctx.lineTo(x+9,y);ctx.stroke();
+    }
+  }
+  // 最新拟合的曲线与预测
+  if(LAST){
+    const env=LAST.envelope;
+    const crit=LAST.criterion===($('criterion').value);
+    if(crit){
+      ctx.lineWidth=2;
+      // 用预测接口给的中位点连线；若没有目标则只画点
+      for(const p of LAST.predictions){
+        const sx=p.input.stress_mpa,x=X(Math.min(Math.max(sx,xmin),xmax));
+        const y=Y(Math.log10(Math.max(p.median_h,Math.pow(10,ymin))));
+        if(p.allowed){
+          ctx.fillStyle=p.risk==='low'?'#58a6ff':'#f0883e';
+          ctx.beginPath();ctx.arc(x,y,4,0,7);ctx.fill();
+          if(!p.within_envelope){
+            ctx.setLineDash([5,4]);ctx.strokeStyle='#f0883e';
+            ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y-10);ctx.stroke();ctx.setLineDash([]);
+            ctx.fillStyle='#f0883e';ctx.font='10px sans-serif';ctx.fillText(p.risk,x-8,y-14);
+          }
+          // PI 竖线
+          ctx.strokeStyle='rgba(88,166,255,.5)';ctx.beginPath();
+          ctx.moveTo(x,Y(Math.log10(p.pi_low_h)));ctx.lineTo(x,Y(Math.log10(p.pi_high_h)));ctx.stroke();
+        }else{
+          ctx.strokeStyle='#f85149';ctx.lineWidth=2;
+          ctx.beginPath();ctx.moveTo(x-5,y-5);ctx.lineTo(x+5,y+5);ctx.moveTo(x+5,y-5);ctx.lineTo(x-5,y+5);ctx.stroke();
+          ctx.fillStyle='#f85149';ctx.font='10px sans-serif';ctx.fillText('拒绝外推 ×',x-26,y-8);
+        }
+      }
+      // 包络框
+      ctx.strokeStyle='rgba(63,185,80,.35)';ctx.setLineDash([2,3]);ctx.lineWidth=1;
+      const ex0=X(env.min_stress_mpa),ex1=X(env.max_stress_mpa);
+      const ey0=Y(ymax),ey1=Y(ymin);
+      ctx.strokeRect(ex0,ey0,ex1-ex0,ey1-ey0);ctx.setLineDash([]);
+    }
+  }
+  drawLegend(ctx,W);
+}
+function drawLegend(ctx,W){
+  const items=[['#3fb950','● 断裂'],['#d29922','▸ 右删失(下界)'],['#bc8cff','◆ 变载'],['#58a6ff','● 预测/区间'],['#f0883e','◆ 允许外推'],['#f85149','× 拒绝']];
+  let x=W-150,y=30;ctx.font='11px sans-serif';
+  for(const [c,t] of items){ctx.fillStyle=c;ctx.fillText(t,x,y);y+=18}
+}
+
+$('btnLoadFixture').onclick=loadFixture;
+$('btnRefresh').onclick=refresh;
+$('btnClear').onclick=clearDb;
+$('btnImport').onclick=importSpec;
+$('btnFit').onclick=runFit;
+$('btnCompare').onclick=compareRuns;
+$('criterion').onchange=drawChart;
+window.addEventListener('resize',drawChart);
+addTarget();
+refresh();loadRunsList();
+</script>
+</body>
+</html>

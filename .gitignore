@@ -34,3 +34,8 @@ coverage/
 .vite/
 .turbo/
 *.tsbuildinfo
+
+# 本地 SQLite
+mastercurve.db
+mastercurve.db-shm
+mastercurve.db-wal

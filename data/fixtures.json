@@ -1,0 +1,342 @@
+[
+ {
+  "specimen_id": "R01",
+  "heat": "A",
+  "temp_value": 500,
+  "temp_unit": "C",
+  "stress_mpa": 200,
+  "time_h": 273.3,
+  "outcome": "ruptured",
+  "criterion": "rupture",
+  "variable": false,
+  "segments": [],
+  "note": "固定fixture：持久断裂样本"
+ },
+ {
+  "specimen_id": "R02",
+  "heat": "A",
+  "temp_value": 500,
+  "temp_unit": "C",
+  "stress_mpa": 150,
+  "time_h": 880.3,
+  "outcome": "ruptured",
+  "criterion": "rupture",
+  "variable": false,
+  "segments": [],
+  "note": "固定fixture：持久断裂样本"
+ },
+ {
+  "specimen_id": "R03",
+  "heat": "B",
+  "temp_value": 500,
+  "temp_unit": "C",
+  "stress_mpa": 150,
+  "time_h": 1392.5,
+  "outcome": "ruptured",
+  "criterion": "rupture",
+  "variable": false,
+  "segments": [],
+  "note": "固定fixture：持久断裂样本"
+ },
+ {
+  "specimen_id": "R04",
+  "heat": "A",
+  "temp_value": 500,
+  "temp_unit": "C",
+  "stress_mpa": 100,
+  "time_h": 4437.4,
+  "outcome": "ruptured",
+  "criterion": "rupture",
+  "variable": false,
+  "segments": [],
+  "note": "固定fixture：持久断裂样本"
+ },
+ {
+  "specimen_id": "R05",
+  "heat": "B",
+  "temp_value": 500,
+  "temp_unit": "C",
+  "stress_mpa": 100,
+  "time_h": 6773.2,
+  "outcome": "ruptured",
+  "criterion": "rupture",
+  "variable": false,
+  "segments": [],
+  "note": "固定fixture：持久断裂样本"
+ },
+ {
+  "specimen_id": "R06",
+  "heat": "A",
+  "temp_value": 550,
+  "temp_unit": "C",
+  "stress_mpa": 150,
+  "time_h": 34.5,
+  "outcome": "ruptured",
+  "criterion": "rupture",
+  "variable": false,
+  "segments": [],
+  "note": "固定fixture：持久断裂样本"
+ },
+ {
+  "specimen_id": "R07",
+  "heat": "B",
+  "temp_value": 550,
+  "temp_unit": "C",
+  "stress_mpa": 120,
+  "time_h": 129.0,
+  "outcome": "ruptured",
+  "criterion": "rupture",
+  "variable": false,
+  "segments": [],
+  "note": "固定fixture：持久断裂样本"
+ },
+ {
+  "specimen_id": "R08",
+  "heat": "A",
+  "temp_value": 550,
+  "temp_unit": "C",
+  "stress_mpa": 100,
+  "time_h": 204.6,
+  "outcome": "ruptured",
+  "criterion": "rupture",
+  "variable": false,
+  "segments": [],
+  "note": "固定fixture：持久断裂样本"
+ },
+ {
+  "specimen_id": "R09",
+  "heat": "B",
+  "temp_value": 550,
+  "temp_unit": "C",
+  "stress_mpa": 80,
+  "time_h": 407.9,
+  "outcome": "ruptured",
+  "criterion": "rupture",
+  "variable": false,
+  "segments": [],
+  "note": "固定fixture：持久断裂样本"
+ },
+ {
+  "specimen_id": "R10",
+  "heat": "A",
+  "temp_value": 550,
+  "temp_unit": "C",
+  "stress_mpa": 60,
+  "time_h": 628.7,
+  "outcome": "ruptured",
+  "criterion": "rupture",
+  "variable": false,
+  "segments": [],
+  "note": "固定fixture：持久断裂样本"
+ },
+ {
+  "specimen_id": "R11",
+  "heat": "B",
+  "temp_value": 600,
+  "temp_unit": "C",
+  "stress_mpa": 100,
+  "time_h": 11.0,
+  "outcome": "ruptured",
+  "criterion": "rupture",
+  "variable": false,
+  "segments": [],
+  "note": "固定fixture：持久断裂样本"
+ },
+ {
+  "specimen_id": "R12",
+  "heat": "A",
+  "temp_value": 600,
+  "temp_unit": "C",
+  "stress_mpa": 80,
+  "time_h": 18.4,
+  "outcome": "ruptured",
+  "criterion": "rupture",
+  "variable": false,
+  "segments": [],
+  "note": "固定fixture：持久断裂样本"
+ },
+ {
+  "specimen_id": "R13",
+  "heat": "B",
+  "temp_value": 600,
+  "temp_unit": "C",
+  "stress_mpa": 60,
+  "time_h": 42.3,
+  "outcome": "ruptured",
+  "criterion": "rupture",
+  "variable": false,
+  "segments": [],
+  "note": "固定fixture：持久断裂样本"
+ },
+ {
+  "specimen_id": "R14",
+  "heat": "A",
+  "temp_value": 600,
+  "temp_unit": "C",
+  "stress_mpa": 40,
+  "time_h": 53.6,
+  "outcome": "ruptured",
+  "criterion": "rupture",
+  "variable": false,
+  "segments": [],
+  "note": "固定fixture：持久断裂样本"
+ },
+ {
+  "specimen_id": "C01",
+  "heat": "B",
+  "temp_value": 550,
+  "temp_unit": "C",
+  "stress_mpa": 100,
+  "time_h": 101.1,
+  "outcome": "censored",
+  "criterion": "rupture",
+  "variable": false,
+  "segments": [],
+  "note": "到时未断（右删失），仅知寿命大于截止时间"
+ },
+ {
+  "specimen_id": "C02",
+  "heat": "A",
+  "temp_value": 600,
+  "temp_unit": "C",
+  "stress_mpa": 60,
+  "time_h": 12.1,
+  "outcome": "censored",
+  "criterion": "rupture",
+  "variable": false,
+  "segments": [],
+  "note": "到时未断（右删失），仅知寿命大于截止时间"
+ },
+ {
+  "specimen_id": "C03",
+  "heat": "B",
+  "temp_value": 500,
+  "temp_unit": "C",
+  "stress_mpa": 120,
+  "time_h": 1618.1,
+  "outcome": "censored",
+  "criterion": "rupture",
+  "variable": false,
+  "segments": [],
+  "note": "到时未断（右删失），仅知寿命大于截止时间"
+ },
+ {
+  "specimen_id": "C04",
+  "heat": "B",
+  "temp_value": 600,
+  "temp_unit": "C",
+  "stress_mpa": 50,
+  "time_h": 27.3,
+  "outcome": "censored",
+  "criterion": "rupture",
+  "variable": false,
+  "segments": [],
+  "note": "到时未断（右删失），仅知寿命大于截止时间"
+ },
+ {
+  "specimen_id": "V01",
+  "heat": "A",
+  "temp_value": 550,
+  "temp_unit": "C",
+  "time_h": 172.7,
+  "outcome": "ruptured",
+  "criterion": "rupture",
+  "variable": true,
+  "segments": [
+   {
+    "stress_mpa": 120,
+    "duration_h": 40.0,
+    "temp_value": null,
+    "temp_unit": null
+   },
+   {
+    "stress_mpa": 90,
+    "duration_h": 132.7,
+    "temp_value": null,
+    "temp_unit": null
+   }
+  ],
+  "note": "变载样本：120MPa×40h 后降至 90MPa，Robinson 累积损伤达 1 时断裂"
+ },
+ {
+  "specimen_id": "V02",
+  "heat": "B",
+  "temp_value": 500,
+  "temp_unit": "C",
+  "time_h": 2783.2,
+  "outcome": "ruptured",
+  "criterion": "rupture",
+  "variable": true,
+  "segments": [
+   {
+    "stress_mpa": 150,
+    "duration_h": 300.0
+   },
+   {
+    "stress_mpa": 120,
+    "duration_h": 2483.2
+   }
+  ],
+  "note": "变载断裂样本"
+ },
+ {
+  "specimen_id": "V03",
+  "heat": "B",
+  "temp_value": 550,
+  "temp_unit": "C",
+  "time_h": 80.0,
+  "outcome": "censored",
+  "criterion": "rupture",
+  "variable": true,
+  "segments": [
+   {
+    "stress_mpa": 150,
+    "duration_h": 20.0
+   },
+   {
+    "stress_mpa": 120,
+    "duration_h": 60.0
+   }
+  ],
+  "note": "变载后到时未断（右删失），累积损伤约0.875<1"
+ },
+ {
+  "specimen_id": "S01",
+  "heat": "A",
+  "temp_value": 550,
+  "temp_unit": "C",
+  "stress_mpa": 100,
+  "time_h": 42.6,
+  "outcome": "ruptured",
+  "criterion": "strain_1pct",
+  "variable": false,
+  "segments": [],
+  "note": "1%蠕变应变准则样本，禁止与rupture混拟"
+ },
+ {
+  "specimen_id": "S02",
+  "heat": "A",
+  "temp_value": 600,
+  "temp_unit": "C",
+  "stress_mpa": 80,
+  "time_h": 4.1,
+  "outcome": "ruptured",
+  "criterion": "strain_1pct",
+  "variable": false,
+  "segments": [],
+  "note": "1%蠕变应变准则样本，禁止与rupture混拟"
+ },
+ {
+  "specimen_id": "S03",
+  "heat": "A",
+  "temp_value": 600,
+  "temp_unit": "C",
+  "stress_mpa": 60,
+  "time_h": 7.6,
+  "outcome": "ruptured",
+  "criterion": "strain_1pct",
+  "variable": false,
+  "segments": [],
+  "note": "1%蠕变应变准则样本，禁止与rupture混拟"
+ }
+]
